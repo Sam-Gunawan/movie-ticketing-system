@@ -87,6 +87,31 @@ class TicketingSystem {
             cout << endl;
         }
 
+        void delete_movie(){
+            if (movies.empty()) {
+            cout << "No movies to delete." << endl;
+            return;
+            }
+
+            cout << "Current Movies:" << endl;
+            for (size_t i = 0; i < movies.size(); ++i) {
+            cout << i + 1 << ". " << movies[i].name << endl;
+            }
+
+            cout << "Enter the index of the movie to delete: ";
+            size_t index;
+            cin >> index;
+
+            if (index > 0 && index <= movies.size()) {
+            auto it = movies.begin() + index - 1; // Adjust index to 0-based
+            movies.erase(it);
+
+            cout << "Movie at index " << index << " successfully deleted." << endl;
+            } else {
+            cout << "Invalid index. No movie deleted." << endl;
+            }
+        }
+
         // Enumerator 
         enum IN { 
             // 13 is ASCII for carriage 
@@ -185,8 +210,30 @@ class TicketingSystem {
 
                     break;
                 
-                case 3: // Add a mew movie
+                case 3: // order a movie
+                    
+                    system("PAUSE");
+                    screen.refresh();
+                    screen.admin_header();
+                    screen.view_admin_options();
+                    cin >> admin_choice;
+
+                    break;
+
+                case 4: // add a mew movie
+                    // delete_movie();
                     add_movie();
+                    
+                    system("PAUSE");
+                    screen.refresh();
+                    screen.admin_header();
+                    screen.view_admin_options();
+                    cin >> admin_choice;
+
+                    break;
+
+                case 5: // Delete a mew movie
+                    delete_movie();
 
                     system("PAUSE");
                     screen.refresh();
@@ -194,6 +241,17 @@ class TicketingSystem {
                     screen.view_admin_options();
                     cin >> admin_choice;
 
+                    break;
+                
+                case 6: //show sales summary
+
+                break;
+
+                case 7://logout MASIH ERROR NAPA INFINTE LOOP DIA 
+                    screen.refresh();
+                    screen.display_start_menu();
+                    screen.exit_message();
+                    system("PAUSE");
                     break;
                 
                 default:
