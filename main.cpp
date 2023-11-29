@@ -1,315 +1,265 @@
 #include <iostream>
-#include <vector>
 #include <string>
+#include <vector>
+#include <ctime>
 #include <map>
 #include <stack>
+#include <stdlib.h>
+#include <iomanip>
+#include <algorithm>
+#include <conio.h>
+
+#include "UI.cpp"
+#include "Linkedlist.cpp"
+#include "MiscellaneousFunctions.cpp"
+#include "Movie.h"
 
 using namespace std;
 
-struct Movie {
-    string name;
-    vector<string> showtimes;
-    map<string, int> ticketsSold;
-};
-
-struct ListNode {
-    string name;
-    int totalTickets;
-    ListNode* next;
-
-    ListNode(const string& n, int tickets) : name(n), totalTickets(tickets), next(nullptr) {}
-};
-
-class LinkedList {
-public:
-    ListNode* head;
-
-    LinkedList() : head(nullptr) {}
-
-    void insert(const string& name, int totalTickets) {
-        ListNode* newNode = new ListNode(name, totalTickets);
-        if (!head || totalTickets > head->totalTickets) {
-            newNode->next = head;
-            head = newNode;
-        } else {
-            ListNode* current = head;
-            while (current->next && totalTickets <= current->next->totalTickets) {
-                current = current->next;
+class TicketingSystem {
+    public:        
+        int contains_alpha(string var) {
+            for (int i = 0; i < var.length(); i++) {
+                if (isalpha(var[i])) {
+                    return 1;
+                }
             }
-            newNode->next = current->next;
-            current->next = newNode;
+            return 0;
         }
-    }
 
-    void display() {
-        ListNode* current = head;
-        while (current) {
-            cout << current->name << ": " << current->totalTickets << " tickets\n";
-            current = current->next;
+        void add_movie() {
+            Movie new_movie;
+            vector<float> showtimes;
+            string new_showtime = "-1"; // accept showtime input as string first so that we can validate it before converting to float
+            string new_movie_name;
+
+            cout << "Enter the movie name: ";
+            cin.ignore();
+            getline(cin, new_movie_name);
+
+            cout << "Set the showtiems for " << new_movie_name << ". Enter '-1' to finish." << endl;
+            counter = 1;
+            while ((counter <= 1 && new_showtime == "-1") || new_showtime != "-1") {
+                cout << "Enter showtime " << counter << " (in 24-hour format): ";
+                cin >> new_showtime;
+                if (contains_alpha(new_showtime)) {
+                    cout << "Invalid input! Enter in 24-hour format (e.g. 12.5 represents 12:30 PM)." << endl;
+                    continue;
+                }
+                if ((stof(new_showtime) < 0 && new_showtime != "-1") || stof(new_showtime) > 24) {
+                    cout << "Invalid input! Showtimes are only valid from 0 - 24." << endl;
+                    continue;
+                }
+                if (counter <= 1 && new_showtime == "-1") {
+                    cout << "Invalid! You have to enter at least one showtime." << endl;
+                    continue;
+                }
+                vector<float>::iterator is_duplicate;
+                is_duplicate = find(showtimes.begin(), showtimes.end(), stof(new_showtime));
+                if (is_duplicate != showtimes.end()) {
+                    cout << "Duplicate found! There is already a showtime at " << new_showtime << "." << endl;
+                    continue;
+                }
+                if (new_showtime == "-1") {
+                    break;
+                }
+                counter++;
+                showtimes.push_back(stof(new_showtime)); // stof() - string to float
+            }
+
+            sort(showtimes.begin(), showtimes.end()); // sort the showtimes from earliest to latest
+
+            new_movie.name = new_movie_name;
+            new_movie.showtimes = showtimes;
+
+            movies.push_back(new_movie);
+
+            cout << "Movie successfully added! Here's a preview of the movie." << endl;
+            cout << "Movie name: " << new_movie.name << endl;
+            for (int j = 0; j < new_movie.showtimes.size(); j++) {
+                float showtime = new_movie.showtimes[j];
+                int showtime_hour = showtime; // typecast into int so it truncuates the fractional part
+                int showtime_minute = (showtime - showtime_hour) * 60; // get only the fractional part and multiply with 60 minutes
+                cout << "Showtime #" << j + 1 << " - " << setw(2) << setfill('0') << showtime_hour << ":";
+                cout << setw(2) << setfill('0') << showtime_minute; // add leading zeros up to 2 digits for the minute display
+                cout << " | The showtime availablity: " << IsShowtimeAvailable(now -> tm_hour, now -> tm_min, showtime_hour, showtime_minute) << endl;       
+            }
+            cout << endl;
         }
-    }
-};
 
-class MovieTicketSystem {
-public:
-    stack<string> movieStack;
-    stack<string> locationStack;
-    stack<string> showtimeStack;
-
-    void displayMovieMenu() {
-        cout << "1. Movie Selection\n";
-        cout << "2. Location Selection\n";
-        cout << "3. View Sales Summary\n";
-        cout << "0. Exit\n";
-    }
-
-    void displayBackOption() {
-        cout << movies.size() + 1 << ". Previous Page\n";
-    }
-
-    void displaySelectionOptions() {
-        cout << "1. Movie Selection\n";
-        cout << "2. Location Selection\n";
-        cout << "3. View Sales Summary\n";
-        cout << "0. Exit\n";
-    }
-
-    void displayMovies() {
-        cout << "Select a movie:\n";
-        for (size_t i = 0; i < movies.size(); ++i) {
-            cout << i + 1 << ". " << movies[i].name << endl;
-        }
-        displayBackOption();
-    }
-
-    void displayLocations() {
-        cout << "Select a location:\n";
-        cout << "1. Kalibata\n";
-        cout << "2. Kelapa Gading\n";
-        cout << "3. Bekasi\n";
-        displayBackOption();
-    }
-
-    void displayShowtimes(const Movie& movie, const string& location) {
-        cout << "Select a showtime for " << movie.name << " at " << location << ":\n";
-        for (size_t i = 0; i < movie.showtimes.size(); ++i) {
-            cout << i + 1 << ". " << movie.showtimes[i] << endl;
-        }
-        displayBackOption();
-    }
-
-    void displaySalesSummary() {
-        cout << "Sales Summary:\n";
-
-        // Create lists to store sorted movies and locations
-        LinkedList movieList, locationList;
-
-        for (const Movie& movie : movies) {
-            int totalTickets = getTotalTicketsSold(movie);
-
-            // Insert into the sorted linked list
-            movieList.insert(movie.name, totalTickets);
-
-            // Insert locations into the sorted linked list
-            for (const auto& entry : movie.ticketsSold) {
-                locationList.insert(entry.first, entry.second);
+        // Enumerator 
+        enum IN { 
+            // 13 is ASCII for carriage 
+            IN_BACK = 8, 
+            IN_RET = 13 
+        }; 
+        
+        // Function that accepts the password 
+        string password_input(char sp = '*') { 
+            // Stores the password 
+            string passwd = ""; 
+            char ch_ipt; 
+        
+            // Until condition is true 
+            while (true) { 
+                ch_ipt = getch(); 
+        
+                // if the ch_ipt 
+                if (ch_ipt == IN::IN_RET) { 
+                    cout << endl; 
+                    return passwd; 
+                } 
+                else if (ch_ipt == IN::IN_BACK && passwd.length() != 0) { 
+                    passwd.pop_back(); 
+        
+                    // Cout statement is very important as it will erase previously printed character 
+                    cout << "\b \b"; 
+                    continue; 
+                } 
+        
+                // Without using this, program will crash as \b can't be print in beginning of line 
+                else if (ch_ipt == IN::IN_BACK && passwd.length() == 0) { 
+                    continue; 
+                } 
+        
+                passwd.push_back(ch_ipt); 
+                cout << sp;
             }
         }
 
-        // Display sorted movie list
-        cout << "Movies:\n";
-        movieList.display();
-
-        // Display sorted location list
-        cout << "\nLocations:\n";
-        locationList.display();
-    }
-
-    int getTotalTicketsSold(const Movie& movie) const {
-        int totalTickets = 0;
-        for (const auto& entry : movie.ticketsSold) {
-            totalTickets += entry.second;
+        int login_page() {
+            string username, pwd;
+            cout << "Username: ";
+            cin.ignore();
+            getline(cin, username);
         }
-        return totalTickets;
-    }
 
-    void processOrder(int amount, Movie& movie, const string& showtime, const string& location) {
-        movie.ticketsSold[location] += amount;
+        void start_menu() {
+            int login_choice = screen.display_start_menu();
 
-        cout << "Preview:\n";
-        cout << "Movie: " << movie.name << endl;
-        cout << "Location: " << location << endl;
-        cout << "Time: " << showtime << endl;
-        cout << "Amount: " << amount << " tickets\n";
-    }
-
-    void navigateBack() {
-        cout << "Previous Selections:\n";
-        if (!movieStack.empty()) {
-            cout << "Movie: " << movieStack.top() << endl;
+            while (true) {
+                if (login_choice == 1) { // login
+                    screen.refresh();
+                    int user = login_page();
+                    if (user) {admin_start_page();}
+                    else {user_start_page();}
+                } else if (login_choice == 2) { // sign up
+                    break;
+                } else if (login_choice == 3) { // exit
+                    screen.exit_message();
+                    exit(0);
+                } else {
+                    cout << "Invalid option. Please choose again: ";
+                    cin >> login_choice;
+                }
+            }
         }
-        if (!locationStack.empty()) {
-            cout << "Location: " << locationStack.top() << endl;
-        }
-        if (!showtimeStack.empty()) {
-            cout << "Showtime: " << showtimeStack.top() << endl;
-        }
-    }
 
-    void run() {
-        int userChoice;
-        int amount;
+        void admin_start_page() {
+            int admin_choice;
+            screen.admin_header();
+            screen.view_admin_options();
+            cin >> admin_choice;
 
-        do {
-            displayMovieMenu();
-            cin >> userChoice;
+            while (admin_choice != 6) {
+                switch (admin_choice) {
+                case 1: // Show all movies
+                    screen.display_all_movies(movies);
 
-            switch (userChoice) {
-                case 1:
-                    displayMovies();
-                    cin >> userChoice;
-                    if (userChoice >= 1 && userChoice <= movies.size()) {
-                        Movie& selectedMovie = movies[userChoice - 1];
-                        movieStack.push(selectedMovie.name);
+                    system("PAUSE");
+                    screen.refresh();
+                    screen.admin_header();
+                    screen.view_admin_options();
+                    cin >> admin_choice;
 
-                        displayLocations();
-                        cin >> userChoice;
-                        if (userChoice >= 1 && userChoice <= 3) {
-                            string selectedLocation;
-                            switch (userChoice) {
-                                case 1:
-                                    selectedLocation = "Kalibata";
-                                    break;
-                                case 2:
-                                    selectedLocation = "Kelapa Gading";
-                                    break;
-                                case 3:
-                                    selectedLocation = "Bekasi";
-                                    break;
-                            }
-                            locationStack.push(selectedLocation);
-
-                            displayShowtimes(selectedMovie, selectedLocation);
-                            cin >> userChoice;
-                            if (userChoice >= 1 && userChoice <= selectedMovie.showtimes.size()) {
-                                string selectedShowtime = selectedMovie.showtimes[userChoice - 1];
-                                showtimeStack.push(selectedShowtime);
-
-                                cout << "Enter the number of tickets: ";
-                                cin >> amount;
-                                processOrder(amount, selectedMovie, selectedShowtime, selectedLocation);
-                            } else if (userChoice == movies.size() + 1) { // Go back to the previous selection
-                                showtimeStack.pop();
-                                locationStack.pop();
-                                movieStack.pop();
-                            } else {
-                                cout << "Invalid showtime selection.\n";
-                                // Go back to the previous selection
-                                showtimeStack.pop();
-                                locationStack.pop();
-                                movieStack.pop();
-                            }
-                        } else if (userChoice == movies.size() + 1) { // Go back to the previous selection
-                            locationStack.pop();
-                            movieStack.pop();
-                        } else {
-                            cout << "Invalid location selection.\n";
-                            // Go back to the previous selection
-                            locationStack.pop();
-                            movieStack.pop();
-                        }
-                    } else if (userChoice == movies.size() + 1) { // Go back to the previous selection
-                        movieStack.pop();
-                    } else {
-                        cout << "Invalid movie selection.\n";
-                    }
                     break;
 
-                case 2:
-                    displayLocations();
-                    cin >> userChoice;
-                    if (userChoice >= 1 && userChoice <= 3) {
-                        string selectedLocation;
-                        switch (userChoice) {
-                            case 1:
-                                selectedLocation = "Kalibata";
-                                break;
-                            case 2:
-                                selectedLocation = "Kelapa Gading";
-                                break;
-                            case 3:
-                                selectedLocation = "Bekasi";
-                                break;
-                        }
-                        locationStack.push(selectedLocation);
+                case 2: // Show all theatres
+                    screen.display_all_theatres(theatres);
 
-                        displayMovies();
-                        cin >> userChoice;
-                        if (userChoice >= 1 && userChoice <= movies.size()) {
-                            Movie& selectedMovie = movies[userChoice - 1];
-                            movieStack.push(selectedMovie.name);
+                    system("PAUSE");
+                    screen.refresh();
+                    screen.admin_header();
+                    screen.view_admin_options();
+                    cin >> admin_choice;
 
-                            displayShowtimes(selectedMovie, selectedLocation);
-                            cin >> userChoice;
-                            if (userChoice >= 1 && userChoice <= selectedMovie.showtimes.size()) {
-                                string selectedShowtime = selectedMovie.showtimes[userChoice - 1];
-                                showtimeStack.push(selectedShowtime);
-
-                                cout << "Enter the number of tickets: ";
-                                cin >> amount;
-                                processOrder(amount, selectedMovie, selectedShowtime, selectedLocation);
-                            } else if (userChoice == movies.size() + 1) { // Go back to the previous selection
-                                showtimeStack.pop();
-                                locationStack.pop();
-                                movieStack.pop();
-                            } else {
-                                cout << "Invalid showtime selection.\n";
-                                // Go back to the previous selection
-                                showtimeStack.pop();
-                                locationStack.pop();
-                                movieStack.pop();
-                            }
-                        } else if (userChoice == movies.size() + 1) { // Go back to the previous selection
-                            movieStack.pop();
-                        } else {
-                            cout << "Invalid movie selection.\n";
-                            // Go back to the previous selection
-                            movieStack.pop();
-                        }
-                    } else if (userChoice == movies.size() + 1) { // Go back to the previous selection
-                        locationStack.pop();
-                    } else {
-                        cout << "Invalid location selection.\n";
-                    }
                     break;
+                
+                case 3: // Add a mew movie
+                    add_movie();
 
-                case 3:
-                    displaySalesSummary();
+                    system("PAUSE");
+                    screen.refresh();
+                    screen.admin_header();
+                    screen.view_admin_options();
+                    cin >> admin_choice;
+
                     break;
-
-                case 6:
-                    navigateBack();
-                    break;
-
+                
                 default:
-                    cout << "Invalid choice. Please try again.\n";
+                    cout << "Invalid option! Choose another option." << endl;
+                    screen.view_admin_options();
+                    cin >> admin_choice;
                     break;
+                }
             }
-        } while (userChoice != 0 || (!movieStack.empty() || !locationStack.empty() || !showtimeStack.empty()));
-    }
 
-private:
-    vector<Movie> movies = {
-        {"Dune", {"10:00 AM", "02:00 PM", "06:00 PM"}},
-        {"The Godfather", {"11:00 AM", "03:00 PM", "07:00 PM"}},
-        {"Gran Turismo", {"12:00 PM", "04:00 PM", "08:00 PM"}},
-        {"Avengers", {"01:00 PM", "05:00 PM", "09:00 PM"}},
-        {"Hunger Games", {"02:00 PM", "06:00 PM", "10:00 PM"}},
-    };
+            start_menu();
+        }
+        
+        void user_start_page() {
+
+        }
+    private:
+        UI screen;
+        vector<Movie> movies = {
+            {"Dune", {10, 14, 18.25, 24}},
+            {"The Godfather", {11.5, 15, 19, 24}},
+            {"Gran Turismo", {12, 16, 20.25, 24}},
+            {"Avengers", {13, 16.5, 21, 24}},
+            {"Hunger Games", {14.5, 18, 20.75, 24}},
+        };
+        vector<Theatres> theatres = {
+            {"Kota Kasablanka"}, 
+            {"Kalibata City"}, 
+            {"Gandaria City"}, 
+            {"Mall Kelapa Gading"}
+        };
+        time_t current_time = time(0);
+        tm* now = localtime(&current_time);
+        int counter;
+        const string admin_info[2] = {"admin", "admin123"};
+        vector<User> users = {
+            {"Jorel", "Halo123!"},
+            {"Calvin", "Hola321!"},
+            {"Sam", "Testing123!"}
+        };
+};
+
+class Admin {
+
+};
+
+class User {
+
 };
 
 int main() {
-    MovieTicketSystem ticketSystem;
-    ticketSystem.run();
-    return 0;
+    time_t current_time = time(0); // get current date and time
+    tm* now = localtime(&current_time); // convert to tm structure
+
+    int showtime_hour, showtime_minute;
+    float showtime;
+
+    UI screen;
+    TicketingSystem sys;
+
+    screen.welcome();
+    screen.display_current_time(current_time);
+    // system("PAUSE");
+    // screen.refresh();
+    // cout << "Refreshed!" << endl;
+
+    sys.start_menu();
+    
 }
