@@ -1,189 +1,137 @@
 #include <iostream>
-#include <vector>
+#include <ctime>
+#include <stdlib.h>
 #include <string>
-#include <unordered_map>
+#include <iomanip>
+#include <vector>
+
+#include "UI.h"
+#include "Movie.h"
 
 using namespace std;
 
-// Define a class for Movie
-class Movie {
-public:
-    string name;
-    string studio;
-    vector<string> showtimes;
-
-    // Constructor
-    Movie(string n, string s, vector<string> st) : name(n), studio(s), showtimes(st) {}
-};
-
-// Define a class for Order
-class Order {
-public:
-    string movieName;
-    string showtime;
-    int row;
-    int column;
-
-    // Constructors
-    Order() : row(0), column(0) {}  // Default constructor
-    Order(string mName, string st, int r, int c) : movieName(mName), showtime(st), row(r), column(c) {}
-};
-
-// Define a class for Binary Search Tree Node
-class TreeNode {
-public:
-    Movie movie;
-    TreeNode* left;
-    TreeNode* right;
-
-    // Constructor
-    TreeNode(Movie m) : movie(m), left(nullptr), right(nullptr) {}
-};
-
-// Binary Search Tree class
-class MovieBST {
-private:
-    TreeNode* root;
-
-    // Helper function for inserting a movie into the BST
-    TreeNode* insert(TreeNode* node, Movie m) {
-        if (node == nullptr) {
-            return new TreeNode(m);
-        }
-
-        if (m.name < node->movie.name) {
-            node->left = insert(node->left, m);
-        } else if (m.name > node->movie.name) {
-            node->right = insert(node->right, m);
-        }
-
-        return node;
-    }
-
-    // Helper function for displaying movies in-order
-    void displayInOrder(TreeNode* node) {
-        if (node != nullptr) {
-            displayInOrder(node->left);
-            cout << node->movie.name << " (" << node->movie.studio << ")\n";
-            displayInOrder(node->right);
-        }
-    }
-
-public:
-    // Constructor
-    MovieBST() : root(nullptr) {}
-
-    // Public function to insert a movie into the BST
-    void insertMovie(Movie m) {
-        root = insert(root, m);
-    }
-
-    // Public function to display movies
-    void displayMovies() {
-        cout << "Available Movies:\n";
-        displayInOrder(root);
-    }
-
-    // Public function to find a movie by name
-    Movie* findMovie(const string& movieName) {
-        TreeNode* current = root;
-
-        while (current != nullptr) {
-            if (movieName == current->movie.name) {
-                return &(current->movie);
-            } else if (movieName < current->movie.name) {
-                current = current->left;
-            } else {
-                current = current->right;
-            }
-        }
-
-        return nullptr;
-    }
-};
-
-// Function to simulate ordering tickets
-void orderTickets(vector<Order>& orders, Movie* selectedMovie, unordered_map<string, int>& salesSummary) {
-    if (selectedMovie == nullptr) {
-        cout << "Invalid movie selection.\n";
-        return;
-    }
-
-    cout << "You've selected: " << selectedMovie->name << " at " << selectedMovie->studio << endl;
-
-    // Get showtime
-    cout << "Available Showtimes:\n";
-    for (size_t i = 0; i < selectedMovie->showtimes.size(); ++i) {
-        cout << i + 1 << ". " << selectedMovie->showtimes[i] << endl;
-    }
-
-    int showtimeChoice;
-    cout << "Select a showtime (enter the showtime number): ";
-    cin >> showtimeChoice;
-
-    if (showtimeChoice >= 1 && showtimeChoice <= static_cast<int>(selectedMovie->showtimes.size())) {
-        string selectedShowtime = selectedMovie->showtimes[showtimeChoice - 1];
-
-        // Get the number of tickets
-        int ticketCount;
-        cout << "How many tickets would you like to order? ";
-        cin >> ticketCount;
-
-        // In a real system, you'd handle seat selection and other details here.
-        // For this example, we'll skip those details.
-        orders.push_back(Order(selectedMovie->name, selectedShowtime, 0, 0));
-
-        // Update sales summary
-        salesSummary[selectedMovie->name] += ticketCount;
-
-        // Display order summary
-        cout << ticketCount << " tickets have been ordered for movie " << selectedMovie->name << " at " << selectedShowtime << endl;
-    } else {
-        cout << "Invalid showtime choice. Please try again.\n";
-    }
+void UI::welcome() {
+    cout << "+------------------------------------------------------------------------------------------+" << endl;
+    cout << "|                                                                                          |" << endl;
+    cout << "|                                                                                          |" << endl;
+    cout << "|    ___       __   _______   ___       ________  ________  _____ ______   _______         |" << endl;
+    cout << "|   |\\  \\     |\\  \\|\\  ___ \\ |\\  \\     |\\   ____\\|\\   __  \\|\\   _ \\  _   \\|\\  ___ \\        |" << endl;
+    cout << "|   \\ \\  \\    \\ \\  \\ \\   __/|\\ \\  \\    \\ \\  \\___|\\ \\  \\|\\  \\ \\  \\\\\\__\\ \\  \\ \\   __/|       |" << endl;
+    cout << "|    \\ \\  \\  __\\ \\  \\ \\  \\_|/_\\ \\  \\    \\ \\  \\    \\ \\  \\\\\\  \\ \\  \\\\|__| \\  \\ \\  \\_|/__     |" << endl;
+    cout << "|     \\ \\  \\|\\__\\_\\  \\ \\  \\_|\\ \\ \\  \\____\\ \\  \\____\\ \\  \\\\\\  \\ \\  \\    \\ \\  \\ \\  \\_|\\ \\    |" << endl;
+    cout << "|      \\ \\____________\\ \\_______\\ \\_______\\ \\_______\\ \\_______\\ \\__\\    \\ \\__\\ \\_______\\   |" << endl;
+    cout << "|       \\|____________|\\|_______|\\|_______|\\|_______|\\|_______|\\|__|     \\|__|\\|_______|   |" << endl;
+    cout << "|                                                                                          |" << endl;
+    cout << "|                                                                                          |" << endl;
+    cout << "|                                                                                          |" << endl;
+    cout << "+------------------------------------------------------------------------------------------+" << endl << endl;
+}
+    
+void UI::refresh() {
+    cout.flush();
+    system("CLS");
 }
 
-int main() {
-    // Create a MovieBST instance to store movie information
-    MovieBST movieBST;
+string UI::multiply_string(string str, int n) {
+    // This function is to reiterate strings n amount of times
+    string result = "";
+    for (int i = 0; i < n; i++) {
+        result += str;        
+    }
+    return result;
+}
 
-    // Insert movies into the BST
-    movieBST.insertMovie({"Movie 1", "Studio A", {"10:00 AM", "02:00 PM", "06:00 PM"}});
-    movieBST.insertMovie({"Movie 2", "Studio B", {"11:00 AM", "03:00 PM", "07:00 PM"}});
-    movieBST.insertMovie({"Movie 3", "Studio C", {"12:00 PM", "04:00 PM", "08:00 PM"}});
+void UI::display_current_time(time_t current_time) {
+    // The display is in day, dd month yyyy, hh:mm format
+    // To make the date and time always centered in the 'box', we need to calculate the distance so that it can be dyanmic and adjust according to the length of the different months
 
-    vector<Order> orders;
-    unordered_map<string, int> salesSummary;
+    tm* now = localtime(&current_time); // convert the time_t data type into tm structure for ease of calculation and comparation
 
-    // Display available movies
-    movieBST.displayMovies();
+    // NOTE: to review more about ctime, go here: https://www.javatpoint.com/cpp-date-and-time
 
+    const string months[12] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+    const string days[8] = {"Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday", "Monday"};
+
+    string day = days[(now -> tm_mday) % 7 + 1];
+    string month = months[(now -> tm_mon)];
+    int year = (now -> tm_year) + 1900; // ctime counts from 1900
+
+    string display = "";
+    display += day; display += ", ";
+    display += to_string(now -> tm_mday); display += " ";
+    display += month; display += " ";
+    display += to_string(year); display += ", ";
+    display += (now -> tm_hour < 10 ? "0" : "") + to_string(now -> tm_hour); display += ":";
+    display += (now -> tm_min < 10 ? "0" : "") + to_string(now -> tm_min);
+
+    int display_length = display.length();
+
+    cout << "+" << multiply_string("-", display_length + 6) << "+" << endl;
+    // cout << "|" << multiply_string(" ", display_length + 6) << "|" << endl;
+    cout << "|   " << display << "   |" << endl;
+    // cout << "|" << multiply_string(" ", display_length + 6) << "|" << endl;
+    cout << "+" << multiply_string("-", display_length + 6) << "+" << endl << endl;
+}
+
+int UI::display_start_menu() {
     int choice;
-    bool isDone = false;
-
-    while (!isDone) {
-        cout << "Select a movie to order tickets (enter the movie number), or enter 0 to view sales summary: ";
-        cin >> choice;
-
-        if (choice == 0) {
-            isDone = true;
-            break;
-        }
-
-        Movie* selectedMovie = movieBST.findMovie("Movie " + to_string(choice));
-        orderTickets(orders, selectedMovie, salesSummary);
-    }
-
-    // Display sales summary
-    cout << "\nSales Summary:\n";
-    for (const auto& entry : salesSummary) {
-        cout << "Tickets sold for " << entry.first << ": " << entry.second << endl;
-    }
-
-    // Process payment, generate invoices, and print tickets
-    // (You would need to implement this part based on your requirements)
-
-    cout << "Thank you for using the Movie Ticketing System!\n";
-
-    return 0;
+    cout << "Welcome to Nonton Kuy!" << endl;
+    cout << "1. Login" << endl;
+    cout << "2. Sign up" << endl;
+    cout << "3. Exit Nonton Kuy" << endl;
+    cout << "Select an option: ";
+    cin >> choice;
+    return choice;
 }
+
+void UI::exit_message() {
+    
+}
+
+void UI::admin_header() {
+    cout << "+---------------------------------+" << endl;
+    cout << "|    You're logged in as ADMIN    |" << endl;
+    cout << "+---------------------------------+" << endl << endl;
+    display_current_time(time(0));
+}
+
+void UI::view_admin_options() {
+    cout << "Available options:" << endl;
+    cout << "1. Show all movies" << endl;
+    cout << "2. Show all theatres" << endl;
+    cout << "3. Add a new movie" << endl;
+    cout << "4. Delete a movie" << endl;
+    cout << "5. Show sales summary" << endl;
+    cout << "6. Logout" << endl << endl;
+
+    cout << "Select an option: ";
+
+}
+
+void UI::display_all_movies(vector<Movie> movies) {
+    for (int i = 0; i < movies.size(); i++) {
+        cout << i + 1 << ". " << movies[i].name << endl;
+    }
+    cout << endl;
+}
+
+void UI::display_all_theatres(vector<Theatres> theatres) {
+    for (int i = 0; i < theatres.size(); i++) {
+        cout << i + 1 << ". " << theatres[i].name << endl;
+    }
+    cout << endl;
+}
+
+// float showtime;
+// int showtime_hour, showtime_minute;
+// int count = 1;
+// for (int i = 0; i < movies.size(); i++) {
+//     for (int j = 0; j < movies[i].showtimes.size(); j++) {
+//         showtime = movies[i].showtimes[j];
+//         showtime_hour = showtime; // typecast into int so it truncuates the fractional part
+//         showtime_minute = (showtime - showtime_hour) * 60; // get only the fractional part and multiply with 60 minutes
+//         cout << movies[i].name << " " << showtime_hour << ":";
+//         cout << setw(2) << setfill('0') << showtime_minute; // add leading zeros up to 2 digits for the minute display
+//         cout << " | The showtime availablity: " << IsShowtimeAvailable(now -> tm_hour, now -> tm_min, showtime_hour, showtime_minute) << endl;       
+//     }
+// }
