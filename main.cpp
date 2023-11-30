@@ -17,7 +17,13 @@
 using namespace std;
 
 class TicketingSystem {
-    public:        
+    public: 
+        int is_showtime_available(int current_hour, int current_minute, int showtime_hour, int showtime_minute) {
+            // returns 1 if showtime has not exceeded the current time, 0 if not.
+            if (current_hour != showtime_hour) { return current_hour < showtime_hour; }
+            else { return current_minute < showtime_minute; }
+        }       
+
         int contains_alpha(string var) {
             for (int i = 0; i < var.length(); i++) {
                 if (isalpha(var[i])) {
@@ -74,7 +80,13 @@ class TicketingSystem {
 
             movies.push_back(new_movie);
 
-            cout << "Movie successfully added! Here's a preview of the movie." << endl;
+            cout << "Adding movie";
+            for (int i = 0; i < 3; i++) {
+                pause(1);
+                cout << " . ";
+            }
+
+            cout << "\nMovie successfully added! Here's a preview of the movie." << endl;
             cout << "Movie name: " << new_movie.name << endl;
             for (int j = 0; j < new_movie.showtimes.size(); j++) {
                 float showtime = new_movie.showtimes[j];
@@ -82,20 +94,21 @@ class TicketingSystem {
                 int showtime_minute = (showtime - showtime_hour) * 60; // get only the fractional part and multiply with 60 minutes
                 cout << "Showtime #" << j + 1 << " - " << setw(2) << setfill('0') << showtime_hour << ":";
                 cout << setw(2) << setfill('0') << showtime_minute; // add leading zeros up to 2 digits for the minute display
-                cout << " | The showtime availablity: " << IsShowtimeAvailable(now -> tm_hour, now -> tm_min, showtime_hour, showtime_minute) << endl;       
+                string availability = is_showtime_available(now -> tm_hour, now -> tm_min, showtime_hour, showtime_minute) ? "Available" : "Unavailable";
+                cout << " | " << availability << endl;
             }
             cout << endl;
         }
 
-        void delete_movie(){
+        void delete_movie() {
             if (movies.empty()) {
-            cout << "No movies to delete." << endl;
-            return;
+                cout << "No movies to delete." << endl;
+                return;
             }
 
             cout << "Current Movies:" << endl;
             for (size_t i = 0; i < movies.size(); ++i) {
-            cout << i + 1 << ". " << movies[i].name << endl;
+                cout << i + 1 << ". " << movies[i].name << endl;
             }
 
             cout << "Enter the index of the movie to delete: ";
@@ -103,23 +116,27 @@ class TicketingSystem {
             cin >> index;
 
             if (index > 0 && index <= movies.size()) {
-            auto it = movies.begin() + index - 1; // Adjust index to 0-based
-            movies.erase(it);
+                auto it = movies.begin() + index - 1; // Adjust index to 0-based
+                movies.erase(it);
 
-            cout << "Movie at index " << index << " successfully deleted." << endl;
+                cout << "Deleting movie";
+                for (int i = 0; i < 3; i++) {
+                    pause(1);
+                    cout << " . ";
+                }
+
+                cout << endl << movies[index - 1].name << " successfully deleted." << endl;
             } else {
-            cout << "Invalid index. No movie deleted." << endl;
+                cout << "Invalid index. No movie deleted." << endl;
             }
         }
 
-        // Enumerator 
         enum IN { 
             // 13 is ASCII for carriage 
             IN_BACK = 8, 
             IN_RET = 13 
         }; 
         
-        // Function that accepts the password 
         string password_input(char sp = '*') { 
             // Stores the password 
             string passwd = ""; 
@@ -152,31 +169,190 @@ class TicketingSystem {
             }
         }
 
-        int login_page() {
+        void display_sales_summary() {
+            cout << "Sales Summary:\n";
+
+            // Create lists to store sorted movies and locations
+            LinkedList movieList, locationList;
+
+            for (int i = 0; i < movies.size(); i++) {
+                Movie& movie = movies[i];
+                int totalTickets = get_total_tickets_sold(movie);
+
+                cout << movie.name << " " << totalTickets << endl;
+
+                // Insert into the sorted linked list
+                movieList.insert(movie.name, totalTickets);
+
+                // Insert locations into the sorted linked list
+                for (const auto& entry : movie.movie_tickets_sold) {
+                    cout << entry.first << " " << entry.second << endl;
+                    locationList.insert(entry.first, entry.second);
+                }
+            }
+
+            // Display sorted movie list
+            cout << "Movies:\n";
+            movieList.display_total_tickets();
+
+            // Display sorted location list
+            cout << "\nLocations:\n";
+            locationList.display_total_tickets();
+        }
+
+        int get_total_tickets_sold(Movie& movie) const {
+            int totalTickets = 0;
+            for (const auto& entry : movie.movie_tickets_sold) {
+                totalTickets += entry.second;
+            }
+            return totalTickets;
+        }
+
+        void pause(int dur) {
+        	int temp = time(NULL) + dur;
+        	while(temp > time(NULL));
+        }
+
+        bool login_page() {
             string username, pwd;
+            int tries = 1;
             cout << "Username: ";
-            cin.ignore();
-            getline(cin, username);
+            cin >> username;
+
+            cout << "Password: ";
+            pwd = password_input();
+
+            while(!(pwd == admin.password && username == admin.name)) {
+                cout << "Incorrect password or username. Please try again." << endl;
+                
+                cout << "Username: ";
+                cin >> username;
+
+                cout << "Password: ";
+                pwd = password_input();
+            }
+            cout << "Login successful! Welcome, " << admin.name << endl;
+            screen.refresh();
+            return 1;
         }
 
         void start_menu() {
             int login_choice = screen.display_start_menu();
+            int maxAttempts;
+            int timeoutDuration;  // Changed to int to store seconds
+            int attempts;
+
 
             while (true) {
-                if (login_choice == 1) { // login
-                    screen.refresh();
-                    int user = login_page();
-                    if (user) {admin_start_page();}
-                    else {user_start_page();}
-                } else if (login_choice == 2) { // sign up
-                    break;
-                } else if (login_choice == 3) { // exit
+                if (login_choice == 1) { // login as admin
+                    // screen.refresh();
+                    bool login = login_page();
+                    if (login) {admin_start_page();}
+                    
+                } else if (login_choice == 2) { // exit
                     screen.exit_message();
                     exit(0);
                 } else {
                     cout << "Invalid option. Please choose again: ";
                     cin >> login_choice;
                 }
+            }
+        }
+
+        bool confirm_purchase() {
+            char choice;
+            cout << "Do you want to confirm the purchase? (y/n): ";
+            cin >> choice;
+            return (choice == 'y' || choice == 'Y');
+        }
+
+        void order_tickets() {
+            int selected_movie;
+            int selected_theatre;
+            int selected_showtime;
+            int ticket_amount;
+            stack<string> movie_stack;
+            stack<string> location_stack;
+            stack<float> showtime_stack;
+
+            screen.display_all_movies(movies);
+            cout << "Select a movie by number: ";
+            cin >> selected_movie;
+            while (selected_movie < 0 || selected_movie > movies.size()) {
+                cout << "Invalid movie number! Please select another movie: ";
+                cin >> selected_movie;
+            }
+            movie_stack.push(movies[selected_movie - 1].name);
+            cout << movies[selected_movie - 1].name << " was selected!" << endl << endl;
+
+            screen.display_all_theatres(theatres);
+            cout << "Select a theatre by number: ";
+            cin >> selected_theatre;
+            while (selected_theatre < 0 || selected_theatre > theatres.size()) {
+                cout << "Invalid theatre! Please select another movie: ";
+                cin >> selected_theatre;
+            }
+            location_stack.push(theatres[selected_theatre - 1].name);
+            cout << theatres[selected_theatre - 1].name << " was selected!" << endl << endl;
+
+            screen.display_showtimes(movies, selected_movie - 1, now);
+            cout << "Select a showtime by number: ";
+            cin >> selected_showtime;
+
+            float showtime = movies[selected_movie - 1].showtimes[selected_showtime - 1];
+            int showtime_hour = showtime; // typecast into int so it truncuates the fractional part
+            int showtime_minute = (showtime - showtime_hour) * 60; // get only the fractional part and multiply with 60 minutes
+            while ((selected_showtime < 0 || selected_showtime > movies[selected_movie - 1].showtimes.size()) || !is_showtime_available(now -> tm_hour, now -> tm_min, showtime_hour, showtime_minute)) {
+                // cout << !is_showtime_available(now -> tm_hour, now -> tm_min, showtime_hour, showtime_minute) << endl;
+                cout << "Invalid showtime! Please select another showtime: ";
+                cin >> selected_showtime;
+
+                showtime = movies[selected_movie - 1].showtimes[selected_showtime - 1];
+                showtime_hour = showtime; // typecast into int so it truncuates the fractional part
+                showtime_minute = (showtime - showtime_hour) * 60; // get only the fractional part and multiply with 60 minutes
+            }
+            showtime_stack.push(showtime);
+            screen.convert_to_showtime(showtime);
+            cout << " was selected!" << endl << endl;
+
+            cout << "How many tickets would you like to order (max. 8)? ";
+            cin >> ticket_amount;
+            while (ticket_amount <= 0 || ticket_amount > 8) {
+                cout << "Invalid number of tickets. Please enter a number between 1 and 8: ";
+                cin >> ticket_amount;
+            }
+            cout << ticket_amount << " ticket(s) have been ordered!" << endl << endl;
+
+            process_order(ticket_amount, movies, movies[selected_movie - 1].showtimes[selected_showtime - 1], theatres[selected_theatre - 1].name, movies[selected_movie - 1].name, selected_movie - 1, selected_theatre - 1);
+        }
+
+        void process_order(int amount, vector<Movie> movies, float showtime, string theatre, string movie, int movie_index, int theatre_index) {
+            while (amount <= 0 || amount > 8) {
+                cout << "Invalid number of tickets. Please enter a number between 1 and 8: ";
+                cin >> amount;
+            }
+
+            movies[movie_index].movie_tickets_sold[theatre] += amount;
+            theatres[theatre_index].theatre_tickets_sold[movie] += amount;
+
+            cout << "-- Review your purchase --\n";
+            cout << "Movie: " << movies[movie_index].name << endl;
+            cout << "Location: " << theatre << endl;
+            cout << "Time: "; screen.convert_to_showtime(showtime); cout << endl;
+            cout << "Amount: " << amount << " tickets\n\n";
+
+            if (confirm_purchase()) {
+                cout << "Processing order";
+                for (int i = 0; i < 3; i++) {
+                    pause(1);
+                    cout << " . ";
+                }
+                cout << endl << "Purchase confirmed!\n";
+            } else {
+                // Discard the selected options
+                movies[movie_index].movie_tickets_sold[theatre] -= amount;
+                theatres[theatre_index].theatre_tickets_sold[movie] -= amount;
+                cout << "Purchase canceled. Selected options discarded.\n";
             }
         }
 
@@ -211,7 +387,8 @@ class TicketingSystem {
                     break;
                 
                 case 3: // order a movie
-                    
+                    order_tickets();
+
                     system("PAUSE");
                     screen.refresh();
                     screen.admin_header();
@@ -221,7 +398,6 @@ class TicketingSystem {
                     break;
 
                 case 4: // add a mew movie
-                    // delete_movie();
                     add_movie();
                     
                     system("PAUSE");
@@ -242,18 +418,7 @@ class TicketingSystem {
                     cin >> admin_choice;
 
                     break;
-                
-                case 6: //show sales summary
 
-                break;
-
-                case 7://logout MASIH ERROR NAPA INFINTE LOOP DIA 
-                    screen.refresh();
-                    screen.display_start_menu();
-                    screen.exit_message();
-                    system("PAUSE");
-                    break;
-                
                 default:
                     cout << "Invalid option! Choose another option." << endl;
                     screen.view_admin_options();
@@ -261,13 +426,12 @@ class TicketingSystem {
                     break;
                 }
             }
-
+            screen.refresh();
+            screen.welcome();
+            screen.display_current_time(time(0));
             start_menu();
         }
         
-        void user_start_page() {
-
-        }
     private:
         UI screen;
         vector<Movie> movies = {
@@ -286,20 +450,7 @@ class TicketingSystem {
         time_t current_time = time(0);
         tm* now = localtime(&current_time);
         int counter;
-        const string admin_info[2] = {"admin", "admin123"};
-        vector<User> users = {
-            {"Jorel", "Halo123!"},
-            {"Calvin", "Hola321!"},
-            {"Sam", "Testing123!"}
-        };
-};
-
-class Admin {
-
-};
-
-class User {
-
+        User admin = {"admin", "admin123"};
 };
 
 int main() {
