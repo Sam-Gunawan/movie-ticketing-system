@@ -10,8 +10,6 @@
 #include <conio.h>
 
 #include "UI.cpp"
-#include "Linkedlist.cpp"
-#include "MiscellaneousFunctions.cpp"
 #include "Movie.h"
 
 using namespace std;
