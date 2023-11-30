@@ -169,45 +169,6 @@ class TicketingSystem {
             }
         }
 
-        void display_sales_summary() {
-            cout << "Sales Summary:\n";
-
-            // Create lists to store sorted movies and locations
-            LinkedList movieList, locationList;
-
-            for (int i = 0; i < movies.size(); i++) {
-                Movie& movie = movies[i];
-                int totalTickets = get_total_tickets_sold(movie);
-
-                cout << movie.name << " " << totalTickets << endl;
-
-                // Insert into the sorted linked list
-                movieList.insert(movie.name, totalTickets);
-
-                // Insert locations into the sorted linked list
-                for (const auto& entry : movie.movie_tickets_sold) {
-                    cout << entry.first << " " << entry.second << endl;
-                    locationList.insert(entry.first, entry.second);
-                }
-            }
-
-            // Display sorted movie list
-            cout << "Movies:\n";
-            movieList.display_total_tickets();
-
-            // Display sorted location list
-            cout << "\nLocations:\n";
-            locationList.display_total_tickets();
-        }
-
-        int get_total_tickets_sold(Movie& movie) const {
-            int totalTickets = 0;
-            for (const auto& entry : movie.movie_tickets_sold) {
-                totalTickets += entry.second;
-            }
-            return totalTickets;
-        }
-
         void pause(int dur) {
         	int temp = time(NULL) + dur;
         	while(temp > time(NULL));
@@ -465,9 +426,6 @@ int main() {
 
     screen.welcome();
     screen.display_current_time(current_time);
-    // system("PAUSE");
-    // screen.refresh();
-    // cout << "Refreshed!" << endl;
 
     sys.start_menu();
     
